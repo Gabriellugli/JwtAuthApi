@@ -1,36 +1,57 @@
-﻿using JwtAuthApi.Models;
+﻿using JwtAuthApi.Data;
+using JwtAuthApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace JwtAuthApi.Services
 {
     public class UserService
     {
-        private static List<User> _users = new List<User>
+        private readonly AppDbContext _context;
+
+        public UserService(AppDbContext context)
         {
-            new User { Username = "admin", Password = "123", Role = "admin" }
-        };
+            _context = context;
+
+            // Cria o admin padrão se não existir
+            if (!_context.Users.Any(u => u.Username == "admin"))
+            {
+                _context.Users.Add(new User { Username = "admin", Password = BCrypt.Net.BCrypt.HashPassword("Admin@123"), Role = "admin" });
+                _context.SaveChanges();
+            }
+        }
 
         public User? GetByUsernameAndPassword(string username, string password)
         {
-            return _users.FirstOrDefault(u => u.Username == username && u.Password == password);
+            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null) return null;
+            if (!BCrypt.Net.BCrypt.Verify(password, user.Password)) return null;
+            return user;
         }
 
         public List<User> GetAll()
         {
-            return _users;
+            return _context.Users.ToList();
         }
 
         public bool Add(User user)
         {
-            if (_users.Any(u => u.Username == user.Username))
+            if (_context.Users.Any(u => u.Username == user.Username))
                 return false;
 
-            _users.Add(user);
+            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            _context.Users.Add(user);
+            _context.SaveChanges();
             return true;
         }
 
         public void Remove(string username)
         {
-            _users.RemoveAll(u => u.Username == username);
+            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+                _context.SaveChanges();
+            }
         }
     }
 }

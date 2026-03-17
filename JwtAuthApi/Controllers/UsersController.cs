@@ -26,8 +26,15 @@ namespace JwtAuthApi.Controllers
         }
 
         [HttpPost]
+        [HttpPost]
         public IActionResult CreateUser(User user)
         {
+            if (user.Password.Length < 8)
+                return BadRequest("A senha deve ter no mínimo 8 caracteres!");
+
+            if (!user.Password.Any(c => !char.IsLetterOrDigit(c)))
+                return BadRequest("A senha deve conter pelo menos um caractere especial!");
+
             var created = _userService.Add(user);
 
             if (!created)
