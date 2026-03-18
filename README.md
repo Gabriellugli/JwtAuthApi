@@ -51,7 +51,7 @@ Autenticação de usuários com geração de tokens JWT.
 ```json
 {
   "username": "admin",
-  "password": "SuaSenha@123"
+  "password": "Admin@123"
 }
 ```
 
